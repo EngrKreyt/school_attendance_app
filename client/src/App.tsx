@@ -15,19 +15,37 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2196f3',
+      main: '#000066', // LCC Biñan navy blue
+      light: '#000099',
+      dark: '#000033',
     },
     secondary: {
-      main: '#f50057',
+      main: '#FFD700', // Gold accent
+      light: '#FFE44D',
+      dark: '#C7A600',
     },
     background: {
-      default: '#f5f5f5',
+      default: '#f8f8f8',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#2C2C2C',
+      secondary: '#595959',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Roboto", "Arial", sans-serif',
     h4: {
       fontWeight: 600,
+      color: '#000066',
+    },
+    h5: {
+      fontWeight: 600,
+      color: '#000066',
+    },
+    h6: {
+      fontWeight: 600,
+      color: '#000066',
     },
   },
   components: {
@@ -36,6 +54,12 @@ const theme = createTheme({
         root: {
           textTransform: 'none',
           borderRadius: 8,
+          fontWeight: 500,
+        },
+        containedPrimary: {
+          '&:hover': {
+            backgroundColor: '#000099',
+          },
         },
       },
     },
@@ -43,6 +67,28 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
+          boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#000066',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            '&:hover fieldset': {
+              borderColor: '#000066',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#000066',
+            },
+          },
         },
       },
     },

@@ -43,8 +43,14 @@ const Navbar = () => {
 
   return (
     <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-      <Toolbar>
-        <SchoolIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+      <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
+        <SchoolIcon 
+          sx={{ 
+            display: { xs: 'none', md: 'flex' }, 
+            mr: 1,
+            color: theme => theme.palette.secondary.main 
+          }} 
+        />
         <Typography
           variant="h6"
           noWrap
@@ -52,21 +58,26 @@ const Navbar = () => {
           sx={{
             mr: 2,
             display: { xs: 'none', md: 'flex' },
-            fontFamily: 'monospace',
+            fontFamily: 'Roboto',
             fontWeight: 700,
-            letterSpacing: '.3rem',
-            color: 'inherit',
+            letterSpacing: '.1rem',
+            color: 'white',
             textDecoration: 'none',
           }}
         >
-          ATTENDANCE
+          LCC BIÑAN
         </Typography>
 
-        <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+        <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
           <Button
             startIcon={<DashboardIcon />}
             onClick={() => navigate('/dashboard')}
-            sx={{ my: 2, color: 'white', display: 'flex' }}
+            sx={{ 
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              }
+            }}
           >
             Dashboard
           </Button>
@@ -74,21 +85,86 @@ const Navbar = () => {
             <Button
               startIcon={<ClassIcon />}
               onClick={() => navigate('/classes')}
-              sx={{ my: 2, color: 'white', display: 'flex' }}
+              sx={{ 
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
             >
               Classes
             </Button>
           )}
         </Box>
 
+        {/* Mobile Menu */}
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexGrow: 1 }}>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={handleMenu}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+            sx={{
+              '& .MuiPaper-root': {
+                backgroundColor: 'white',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+              }
+            }}
+          >
+            <MenuItem onClick={() => { navigate('/dashboard'); handleClose(); }}>
+              <DashboardIcon sx={{ mr: 1 }} /> Dashboard
+            </MenuItem>
+            {user.role === 'teacher' && (
+              <MenuItem onClick={() => { navigate('/classes'); handleClose(); }}>
+                <ClassIcon sx={{ mr: 1 }} /> Classes
+              </MenuItem>
+            )}
+          </Menu>
+        </Box>
+
+        {/* Mobile Title */}
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            flexGrow: 1,
+            display: { xs: 'flex', md: 'none' },
+            justifyContent: 'center',
+            fontWeight: 700,
+            color: 'white',
+          }}
+        >
+          LCC BIÑAN
+        </Typography>
+
         <Box sx={{ flexGrow: 0 }}>
           <IconButton onClick={handleMenu} sx={{ p: 0 }}>
-            <Avatar sx={{ bgcolor: 'secondary.main' }}>
+            <Avatar 
+              sx={{ 
+                bgcolor: 'secondary.main',
+                color: 'primary.main',
+                fontWeight: 'bold'
+              }}
+            >
               {user.name.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
           <Menu
-            sx={{ mt: '45px' }}
+            sx={{ 
+              mt: '45px',
+              '& .MuiPaper-root': {
+                backgroundColor: 'white',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+              }
+            }}
             id="menu-appbar"
             anchorEl={anchorEl}
             anchorOrigin={{
@@ -104,15 +180,19 @@ const Navbar = () => {
             onClose={handleClose}
           >
             <MenuItem>
-              <Typography textAlign="center">{user.name}</Typography>
+              <Typography textAlign="center" sx={{ color: 'text.primary', fontWeight: 500 }}>
+                {user.name}
+              </Typography>
             </MenuItem>
             <MenuItem>
-              <Typography textAlign="center">{user.email}</Typography>
+              <Typography textAlign="center" sx={{ color: 'text.secondary' }}>
+                {user.email}
+              </Typography>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
-              <LogoutIcon sx={{ mr: 2 }} />
-              Logout
+              <LogoutIcon sx={{ mr: 2, color: 'primary.main' }} />
+              <Typography sx={{ color: 'primary.main' }}>Logout</Typography>
             </MenuItem>
           </Menu>
         </Box>
