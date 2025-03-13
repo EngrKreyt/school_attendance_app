@@ -23,6 +23,7 @@ const Login = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,12 +33,23 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+    setIsLoading(true);
+    
+    console.log('Attempting login with email:', formData.email);
+    
     try {
       await login(formData.email, formData.password);
+      console.log('Login successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Login failed');
+      console.error('Login error:', error);
+      setError(
+        error.response?.data?.message || 
+        error.message || 
+        'Login failed. Please check your credentials and try again.'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,8 +116,9 @@ const Login = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
             <Box sx={{ textAlign: 'center' }}>
               <Link component={RouterLink} to="/register" variant="body2">
