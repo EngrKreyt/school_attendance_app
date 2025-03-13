@@ -120,15 +120,35 @@ const Dashboard: React.FC = () => {
 
   const handleMarkAttendance = async (studentId: string, status: 'present' | 'absent' | 'late') => {
     try {
-      await axios.post(getApiUrl('/api/attendance'), {
+      setLoading(true);
+      const response = await axios.post(getApiUrl('/api/attendance'), {
         student: studentId,
         class: selectedClass,
         status,
         date: selectedDate?.toISOString(),
       });
-      fetchAttendanceRecords();
+
+      // Update the attendance records state immediately
+      setAttendanceRecords(prevRecords => {
+        const newRecords = [...prevRecords];
+        const existingIndex = newRecords.findIndex(
+          record => record.student._id === studentId
+        );
+        
+        if (existingIndex !== -1) {
+          // Update existing record
+          newRecords[existingIndex] = response.data;
+        } else {
+          // Add new record
+          newRecords.push(response.data);
+        }
+        
+        return newRecords;
+      });
     } catch (error) {
       console.error('Error marking attendance:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -152,26 +172,57 @@ const Dashboard: React.FC = () => {
   const assignedStudents = getAssignedStudents();
 
   return (
-    <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 2, sm: 4 } }}>
-      <Grid container spacing={2}>
+    <Container 
+      maxWidth="lg" 
+      sx={{ 
+        mt: { xs: 1, sm: 2, md: 4 }, 
+        mb: { xs: 1, sm: 2, md: 4 },
+        px: { xs: 1, sm: 2, md: 3 } // Add padding for smaller screens
+      }}
+    >
+      <Grid container spacing={{ xs: 1, sm: 2 }}>
         <Grid item xs={12}>
-          <Paper sx={{ p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column' }}>
-            <Typography component="h1" variant="h4" gutterBottom>
+          <Paper 
+            sx={{ 
+              p: { xs: 1, sm: 2, md: 3 }, 
+              display: 'flex', 
+              flexDirection: 'column',
+              borderRadius: { xs: 1, sm: 2 },
+              boxShadow: { xs: 1, sm: 2 }
+            }}
+          >
+            <Typography 
+              component="h1" 
+              variant="h4" 
+              gutterBottom
+              sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+                mb: { xs: 1, sm: 2 }
+              }}
+            >
               Attendance Dashboard
             </Typography>
             <Box sx={{ 
-              mb: 3, 
+              mb: { xs: 2, sm: 3 }, 
               display: 'flex', 
               flexDirection: { xs: 'column', sm: 'row' }, 
-              gap: 2,
-              '& > *': { width: { xs: '100%', sm: 'auto' } }
+              gap: { xs: 1, sm: 2 },
+              '& > *': { 
+                width: { xs: '100%', sm: '50%', md: 'auto' },
+                minWidth: { sm: 200 }
+              }
             }}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Select Date"
                   value={selectedDate}
                   onChange={(newValue) => setSelectedDate(newValue)}
-                  sx={{ minWidth: { sm: 200 } }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true
+                    }
+                  }}
                 />
               </LocalizationProvider>
               <TextField
@@ -179,7 +230,8 @@ const Dashboard: React.FC = () => {
                 label="Select Class"
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                sx={{ minWidth: { sm: 200 } }}
+                size="small"
+                fullWidth
               >
                 {classes.map((classItem) => (
                   <MenuItem key={classItem._id} value={classItem._id}>
@@ -189,7 +241,13 @@ const Dashboard: React.FC = () => {
               </TextField>
             </Box>
             {assignedStudents.length === 0 && (
-              <Alert severity="info" sx={{ mb: 2 }}>
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  mb: 2,
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                }}
+              >
                 No students are assigned to this class yet. Please assign students in the Class Management page.
               </Alert>
             )}
@@ -197,6 +255,11 @@ const Dashboard: React.FC = () => {
               overflowX: 'auto',
               '& .MuiTable-root': {
                 minWidth: { xs: 'auto', sm: 650 }
+              },
+              '& .MuiTableCell-root': {
+                px: { xs: 1, sm: 2 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
               }
             }}>
               <Table size="small">
@@ -217,21 +280,39 @@ const Dashboard: React.FC = () => {
                         <TableCell>{student.name}</TableCell>
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.email}</TableCell>
                         <TableCell>{getClassName(selectedClass)}</TableCell>
-                        <TableCell>{attendance?.status || 'Not marked'}</TableCell>
+                        <TableCell>
+                          <Box sx={{
+                            display: 'inline-block',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            bgcolor: attendance?.status === 'present' ? 'success.light' :
+                                    attendance?.status === 'absent' ? 'error.light' :
+                                    attendance?.status === 'late' ? 'warning.light' : 'grey.100',
+                            color: attendance?.status === 'present' ? 'success.dark' :
+                                  attendance?.status === 'absent' ? 'error.dark' :
+                                  attendance?.status === 'late' ? 'warning.dark' : 'text.secondary'
+                          }}>
+                            {attendance?.status || 'Not marked'}
+                          </Box>
+                        </TableCell>
                         {user?.role === 'teacher' && (
                           <TableCell>
                             <Box sx={{ 
                               display: 'flex', 
-                              gap: 1,
+                              gap: { xs: 0.5, sm: 1 },
                               flexDirection: { xs: 'column', sm: 'row' },
                               '& .MuiButton-root': {
-                                padding: { xs: '4px 8px', sm: '6px 16px' },
+                                minWidth: { xs: '72px', sm: 'auto' },
+                                px: { xs: 1, sm: 2 },
+                                py: { xs: 0.5, sm: 1 },
                                 fontSize: { xs: '0.75rem', sm: '0.875rem' }
                               }
                             }}>
                               <Button
                                 size="small"
-                                variant="contained"
+                                variant={attendance?.status === 'present' ? "contained" : "outlined"}
                                 color="primary"
                                 onClick={() => handleMarkAttendance(student._id, 'present')}
                               >
@@ -239,7 +320,7 @@ const Dashboard: React.FC = () => {
                               </Button>
                               <Button
                                 size="small"
-                                variant="contained"
+                                variant={attendance?.status === 'absent' ? "contained" : "outlined"}
                                 color="error"
                                 onClick={() => handleMarkAttendance(student._id, 'absent')}
                               >
@@ -247,7 +328,7 @@ const Dashboard: React.FC = () => {
                               </Button>
                               <Button
                                 size="small"
-                                variant="contained"
+                                variant={attendance?.status === 'late' ? "contained" : "outlined"}
                                 color="warning"
                                 onClick={() => handleMarkAttendance(student._id, 'late')}
                               >

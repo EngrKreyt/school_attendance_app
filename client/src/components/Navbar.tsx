@@ -24,18 +24,28 @@ import { useAuth } from '../context/AuthContext';
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [mobileMenuAnchor, setMobileMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [profileMenuAnchor, setProfileMenuAnchor] = React.useState<null | HTMLElement>(null);
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileMenuAnchor(event.currentTarget);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchor(null);
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileMenuAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileMenuAnchor(null);
   };
 
   const handleLogout = () => {
     logout();
+    handleProfileMenuClose();
     navigate('/login');
   };
 
@@ -68,6 +78,7 @@ const Navbar = () => {
           LCC BIÑAN
         </Typography>
 
+        {/* Desktop Menu */}
         <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
           <Button
             startIcon={<DashboardIcon />}
@@ -98,32 +109,33 @@ const Navbar = () => {
         </Box>
 
         {/* Mobile Menu */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' }, flexGrow: 1 }}>
+        <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
           <IconButton
             size="large"
             edge="start"
             color="inherit"
             aria-label="menu"
-            onClick={handleMenu}
+            onClick={handleMobileMenuOpen}
           >
             <MenuIcon />
           </IconButton>
           <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
+            anchorEl={mobileMenuAnchor}
+            open={Boolean(mobileMenuAnchor)}
+            onClose={handleMobileMenuClose}
             sx={{
+              display: { xs: 'block', md: 'none' },
               '& .MuiPaper-root': {
                 backgroundColor: 'white',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
               }
             }}
           >
-            <MenuItem onClick={() => { navigate('/dashboard'); handleClose(); }}>
+            <MenuItem onClick={() => { navigate('/dashboard'); handleMobileMenuClose(); }}>
               <DashboardIcon sx={{ mr: 1 }} /> Dashboard
             </MenuItem>
             {user.role === 'teacher' && (
-              <MenuItem onClick={() => { navigate('/classes'); handleClose(); }}>
+              <MenuItem onClick={() => { navigate('/classes'); handleMobileMenuClose(); }}>
                 <ClassIcon sx={{ mr: 1 }} /> Classes
               </MenuItem>
             )}
@@ -145,13 +157,32 @@ const Navbar = () => {
           LCC BIÑAN
         </Typography>
 
-        <Box sx={{ flexGrow: 0 }}>
-          <IconButton onClick={handleMenu} sx={{ p: 0 }}>
+        {/* Profile Menu */}
+        <Box sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          ml: 'auto'
+        }}>
+          <IconButton 
+            onClick={handleProfileMenuOpen} 
+            sx={{ 
+              p: 0.5,
+              ml: { xs: 1, md: 2 },
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+              }
+            }}
+          >
             <Avatar 
               sx={{ 
+                width: 32,
+                height: 32,
                 bgcolor: 'secondary.main',
                 color: 'primary.main',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '0.9rem'
               }}
             >
               {user.name.charAt(0).toUpperCase()}
@@ -163,10 +194,11 @@ const Navbar = () => {
               '& .MuiPaper-root': {
                 backgroundColor: 'white',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+                minWidth: '200px'
               }
             }}
-            id="menu-appbar"
-            anchorEl={anchorEl}
+            id="profile-menu"
+            anchorEl={profileMenuAnchor}
             anchorOrigin={{
               vertical: 'top',
               horizontal: 'right',
@@ -176,16 +208,16 @@ const Navbar = () => {
               vertical: 'top',
               horizontal: 'right',
             }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
+            open={Boolean(profileMenuAnchor)}
+            onClose={handleProfileMenuClose}
           >
-            <MenuItem>
+            <MenuItem sx={{ pointerEvents: 'none' }}>
               <Typography textAlign="center" sx={{ color: 'text.primary', fontWeight: 500 }}>
                 {user.name}
               </Typography>
             </MenuItem>
-            <MenuItem>
-              <Typography textAlign="center" sx={{ color: 'text.secondary' }}>
+            <MenuItem sx={{ pointerEvents: 'none' }}>
+              <Typography textAlign="center" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
                 {user.email}
               </Typography>
             </MenuItem>

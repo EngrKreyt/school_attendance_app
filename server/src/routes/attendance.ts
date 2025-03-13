@@ -22,13 +22,62 @@ router.post('/',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const attendance = new Attendance({
-        ...req.body,
-        markedBy: req.user.userId
+      const { student, class: className, status, date } = req.body;
+      
+      // Check for existing attendance record for the same student, class and date
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingAttendance = await Attendance.findOne({
+        student,
+        class: className,
+        date: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        }
       });
 
-      await attendance.save();
-      res.status(201).json(attendance);
+      let attendance;
+      if (existingAttendance) {
+        // Update existing record
+        const updatedAttendance = await Attendance.findByIdAndUpdate(
+          existingAttendance._id,
+          { 
+            status,
+            markedBy: req.user.userId,
+            updatedAt: new Date()
+          },
+          { new: true }
+        );
+        if (!updatedAttendance) {
+          return res.status(404).json({ message: 'Failed to update attendance record' });
+        }
+        attendance = updatedAttendance;
+      } else {
+        // Create new record
+        const newAttendance = new Attendance({
+          student,
+          class: className,
+          status,
+          date,
+          markedBy: req.user.userId
+        });
+        attendance = await newAttendance.save();
+      }
+
+      // Populate the response
+      const populatedAttendance = await Attendance.findById(attendance._id)
+        .populate('student', 'name email')
+        .populate('markedBy', 'name');
+
+      if (!populatedAttendance) {
+        return res.status(404).json({ message: 'Failed to retrieve attendance record' });
+      }
+
+      res.status(201).json(populatedAttendance);
     } catch (error) {
       console.error('Attendance marking error:', error);
       res.status(500).json({ message: 'Server error' });
