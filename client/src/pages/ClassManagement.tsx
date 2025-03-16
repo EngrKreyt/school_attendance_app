@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Chip,
   Grid,
@@ -57,6 +58,8 @@ const ClassManagement: React.FC = () => {
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<Class | null>(null);
 
   useEffect(() => {
     fetchClasses();
@@ -170,17 +173,39 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleAddStudents = async () => {
+    if (selectedStudents.length === 0) {
+      alert('Please select at least one student to add');
+      return;
+    }
+    
     try {
-      await axios.post(getApiUrl(`/api/classes/${selectedClass?._id}/students`), {
+      const response = await axios.post(getApiUrl(`/api/classes/${selectedClass?._id}/students`), {
         studentIds: selectedStudents,
       });
       setSelectedStudents([]);
       setOpenDialog(false);
       fetchClasses();
+      
+      // Check if any students were not added (already in class)
+      if (response.data && selectedStudents.length > 0) {
+        // Success message
+        alert('Students added successfully');
+      }
     } catch (error: any) {
       console.error('Error adding students:', error);
       alert(error.response?.data?.message || 'Failed to add students. Please try again.');
     }
+  };
+
+  // Get students who are not already in the selected class
+  const getAvailableStudentsForClass = () => {
+    if (!selectedClass) return students;
+    
+    // Get IDs of students already in the class
+    const existingStudentIds = selectedClass.students.map(student => student._id);
+    
+    // Filter out students who are already in the class
+    return students.filter(student => !existingStudentIds.includes(student._id));
   };
 
   const handleCloseDialog = () => {
@@ -193,6 +218,30 @@ const ClassManagement: React.FC = () => {
     setNewClassName('');
     setNewClassDescription('');
     setEditingClass(null);
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
+    
+    try {
+      await axios.delete(getApiUrl(`/api/classes/${classToDelete._id}`));
+      setClasses(classes.filter(c => c._id !== classToDelete._id));
+      setDeleteConfirmOpen(false);
+      setClassToDelete(null);
+    } catch (error: any) {
+      console.error('Error deleting class:', error);
+      alert(error.response?.data?.message || 'Failed to delete class. Please try again.');
+    }
+  };
+
+  const openDeleteConfirm = (cls: Class) => {
+    setClassToDelete(cls);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setClassToDelete(null);
   };
 
   return (
@@ -266,16 +315,29 @@ const ClassManagement: React.FC = () => {
                       {cls.name}
                     </Typography>
                     {user?.role === 'teacher' && (
-                      <Button
-                        startIcon={<EditIcon />}
-                        size="small"
-                        onClick={() => handleEditClass(cls)}
-                        sx={{
-                          alignSelf: { xs: 'flex-start', sm: 'center' }
-                        }}
-                      >
-                        Edit Class
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          startIcon={<EditIcon />}
+                          size="small"
+                          onClick={() => handleEditClass(cls)}
+                          sx={{
+                            alignSelf: { xs: 'flex-start', sm: 'center' }
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          startIcon={<DeleteIcon />}
+                          size="small"
+                          color="error"
+                          onClick={() => openDeleteConfirm(cls)}
+                          sx={{
+                            alignSelf: { xs: 'flex-start', sm: 'center' }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
                     )}
                   </Box>
                   
@@ -370,50 +432,63 @@ const ClassManagement: React.FC = () => {
           pt: { xs: 1, sm: 2 },
           px: { xs: 2, sm: 3 }
         }}>
-          <TextField
-            select
-            label="Select Students"
-            value={selectedStudents}
-            onChange={(event: SelectChangeEvent<string[]>) => handleStudentSelection(event)}
-            fullWidth
-            SelectProps={{
-              multiple: true,
-              renderValue: (selected: any) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((studentId: string) => {
-                    const student = availableStudents.find(s => s._id === studentId);
-                    return student ? (
-                      <Chip 
-                        key={student._id} 
-                        label={student.name} 
-                        size="small"
-                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                      />
-                    ) : null;
-                  })}
-                </Box>
-              )
-            }}
-            size="small"
-            sx={{ mt: 1 }}
-          >
-            {availableStudents.map((student) => (
-              <MenuItem 
-                key={student._id} 
-                value={student._id}
-                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-              >
-                {student.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          {getAvailableStudentsForClass().length === 0 ? (
+            <Typography color="text.secondary">
+              All students are already assigned to this class.
+            </Typography>
+          ) : (
+            <TextField
+              select
+              label="Select Students"
+              value={selectedStudents}
+              onChange={(event: SelectChangeEvent<string[]>) => handleStudentSelection(event)}
+              fullWidth
+              SelectProps={{
+                multiple: true,
+                renderValue: (selected: any) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((studentId: string) => {
+                      const student = students.find(s => s._id === studentId);
+                      return student ? (
+                        <Chip 
+                          key={student._id} 
+                          label={student.name} 
+                          size="small"
+                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        />
+                      ) : null;
+                    })}
+                  </Box>
+                )
+              }}
+              size="small"
+              sx={{ mt: 1 }}
+            >
+              {getAvailableStudentsForClass().map((student) => (
+                <MenuItem 
+                  key={student._id} 
+                  value={student._id}
+                  sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                >
+                  {student.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
         </DialogContent>
         <DialogActions sx={{ 
           px: { xs: 2, sm: 3 }, 
           py: { xs: 2, sm: 2.5 }
         }}>
           <Button onClick={handleCloseDialog} size="small">Cancel</Button>
-          <Button onClick={handleAddStudents} variant="contained" size="small">Add</Button>
+          <Button 
+            onClick={handleAddStudents} 
+            variant="contained" 
+            size="small"
+            disabled={getAvailableStudentsForClass().length === 0}
+          >
+            Add
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -470,6 +545,32 @@ const ClassManagement: React.FC = () => {
             size="small"
           >
             {editingClass ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Class
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete the class "{classToDelete?.name}"? This action cannot be undone.
+            All attendance records for this class will also be deleted.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirm} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteClass} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

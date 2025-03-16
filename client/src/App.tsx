@@ -109,6 +109,9 @@ const TeacherRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
+// StudentRoute is not needed as the server filters classes based on student assignments
+// Students will only see classes they are assigned to in the Dashboard
+
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return (

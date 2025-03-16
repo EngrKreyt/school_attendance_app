@@ -10,6 +10,7 @@ import {
   Button,
   Avatar,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -80,18 +81,35 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-          <Button
-            startIcon={<DashboardIcon />}
-            onClick={() => navigate('/dashboard')}
-            sx={{ 
-              color: 'white',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              }
-            }}
-          >
-            Dashboard
-          </Button>
+          {user.role === 'student' ? (
+            <Tooltip title="You will only see classes you are assigned to">
+              <Button
+                startIcon={<DashboardIcon />}
+                onClick={() => navigate('/dashboard')}
+                sx={{ 
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
+              >
+                My Classes
+              </Button>
+            </Tooltip>
+          ) : (
+            <Button
+              startIcon={<DashboardIcon />}
+              onClick={() => navigate('/dashboard')}
+              sx={{ 
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              Dashboard
+            </Button>
+          )}
           {user.role === 'teacher' && (
             <Button
               startIcon={<ClassIcon />}
@@ -103,7 +121,7 @@ const Navbar = () => {
                 }
               }}
             >
-              Classes
+              Class Management
             </Button>
           )}
         </Box>
@@ -132,11 +150,17 @@ const Navbar = () => {
             }}
           >
             <MenuItem onClick={() => { navigate('/dashboard'); handleMobileMenuClose(); }}>
-              <DashboardIcon sx={{ mr: 1 }} /> Dashboard
+              <DashboardIcon sx={{ mr: 1 }} /> 
+              {user.role === 'student' ? 'My Classes' : 'Dashboard'}
+              {user.role === 'student' && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 2 }}>
+                  (Only shows classes you're assigned to)
+                </Typography>
+              )}
             </MenuItem>
             {user.role === 'teacher' && (
               <MenuItem onClick={() => { navigate('/classes'); handleMobileMenuClose(); }}>
-                <ClassIcon sx={{ mr: 1 }} /> Classes
+                <ClassIcon sx={{ mr: 1 }} /> Class Management
               </MenuItem>
             )}
           </Menu>

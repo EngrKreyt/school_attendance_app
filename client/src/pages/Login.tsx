@@ -9,6 +9,7 @@ import {
   Alert,
   Link,
   Avatar,
+  FormHelperText,
 } from '@mui/material';
 import { LockOutlined as LockOutlinedIcon } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
@@ -22,17 +23,69 @@ const Login = () => {
     email: '',
     password: '',
   });
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      return 'Email is required';
+    }
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validatePassword = (password: string) => {
+    if (!password) {
+      return 'Password is required';
+    }
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return '';
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Clear general error when user starts typing
     setError('');
+    
+    // Validate on change
+    if (name === 'email') {
+      const emailError = validateEmail(value);
+      setErrors(prev => ({ ...prev, email: emailError }));
+    } else if (name === 'password') {
+      const passwordError = validatePassword(value);
+      setErrors(prev => ({ ...prev, password: passwordError }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validate all fields before submission
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    
+    setErrors({
+      email: emailError,
+      password: passwordError,
+    });
+    
+    // If there are validation errors, don't proceed
+    if (emailError || passwordError) {
+      return;
+    }
+    
     setIsLoading(true);
     
     console.log('Attempting login with email:', formData.email);
@@ -99,6 +152,8 @@ const Login = () => {
               autoFocus
               value={formData.email}
               onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
             />
             <TextField
               margin="normal"
@@ -110,6 +165,8 @@ const Login = () => {
               autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
             />
             <Button
               type="submit"
