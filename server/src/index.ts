@@ -9,11 +9,12 @@ import classRoutes from './routes/class';
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT || 5000;
+const port = parseInt(process.env.PORT || '5000', 10);
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://192.168.0.245:3000', 'http://192.168.0.245:3001'],
+  // Allow connections from any origin in development
+  origin: '*',
   credentials: true
 }));
 app.use(express.json());
@@ -42,8 +43,10 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Connect to MongoDB before starting the server
 connectDB().then(() => {
-  app.listen(port, () => {
+  // Listen on all network interfaces (0.0.0.0)
+  app.listen(port, '0.0.0.0', () => {
     console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
+    console.log(`To access from other devices on your network, use your computer's IP address: http://<your-ip-address>:${port}`);
   });
 }).catch(err => {
   console.error('Failed to start server:', err);
